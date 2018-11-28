@@ -10,6 +10,8 @@ const loadAll = (prefix) => new Promise((resolve, reject) => {
     .on('error', reject)
     .on('end', () => resolve(result))
 })
+const writeOne = (prefix, key, value) =>
+  db.put(`${prefix}:${key}`, JSON.stringify(value))
 
 const result = {
   load: () => Promise.all([
@@ -20,17 +22,17 @@ const result = {
   users: {},
   setUser: (id, user) => {
     result.users[id] = user
-    db.put(`user:${id}`, JSON.stringify(user))
+    writeOne('user', id, user)
   },
   emails: {},
   setEmail: (emailAddress, userId) => {
     result.emails[emailAddress] = userId
-    db.put(`email:${emailAddress}`, JSON.stringify(userId))
+    writeOne('email', emailAddress, userId)
   },
   apps: {},
   setApp: (id, app) => {
     result.apps[id] = app
-    db.put(`app:${id}`, JSON.stringify(app))
+    writeOne('app', id, app)
   }
 }
 module.exports = result

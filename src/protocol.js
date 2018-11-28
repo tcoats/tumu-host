@@ -7,6 +7,8 @@ const isolate = require('./isolate')
 
 module.exports = {
   login: (socket, emailAddress) => {
+    // auto signup
+    // TODO: email validation?
     if (!access.emails[emailAddress]) {
       socket.secret = speakeasy.generateSecret().base32
       socket.send('secret', socket.secret)
@@ -84,6 +86,7 @@ module.exports = {
     app.code = params.code
     access.setApp(params.app, app)
     isolate.run(app)
+    isolate.emit(app.appId, 'ping')
     socket.send('publish')
   },
   logs: (socket, app) => {
@@ -93,9 +96,9 @@ module.exports = {
     if (!app) return socket.send('error', 'App not specified')
     if (!access.apps[app]) return socket.send('error', 'App not found')
     const log = (...args) => {
-      if (socket.isclosed) return isolate.off(app, log)
+      if (socket.isclosed) return isolate.off(app, 'log', log)
       socket.send('log', args)
     }
-    isolate.on(app, log)
+    isolate.on(app, 'log', log)
   }
 }

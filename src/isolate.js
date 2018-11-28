@@ -1,65 +1,101 @@
 const ivm = require('isolated-vm')
+const hub = require('odo-hub')
 const access = require('./access')
 const instances = {}
-const listeners = {}
 
-const emit = (appId, ...args) => {
-  if (!listeners[appId]) return
-  for (let listener of listeners[appId]) listener(...args)
-}
+const create = (app) => {
+  let code = app.code
+  const incoming = hub()
+  const outgoing = hub()
+  let isolate = null
+  let internal = null
+  const result = {
+    appId: app.appId,
+    on: outgoing.on,
+    off: outgoing.off,
+    emit: incoming.emit,
+    start: () => {
+      isolate = new ivm.Isolate()
+      internal = hub()
+      incoming.unhandled(internal.emit)
+      const context = isolate.createContextSync()
+      const jail = context.global
+      jail.setSync('global', jail.derefInto())
+      jail.setSync('_ivm', ivm)
+      jail.setSync('_on', new ivm.Reference((e, cb) =>
+        internal.on(e, (...args) => cb.applyIgnored(
+          undefined,
+          args.map(arg => new ivm.ExternalCopy(arg).copyInto())))))
+      jail.setSync('_emit', new ivm.Reference(outgoing.emit))
 
-const run = (app) => {
-  if (instances[app.appId]) {
-    instances[app.appId].stop()
-    delete instances[app.appId]
-  }
-  const isolate = new ivm.Isolate()
-  const context = isolate.createContextSync()
-  const jail = context.global
-  jail.setSync('global', jail.derefInto())
-  jail.setSync('_ivm', ivm)
-  jail.setSync('_log', new ivm.Reference((...args) => emit(app.appId, ...args)))
-  jail.setSync('_error', new ivm.Reference((...args) => emit(app.appId, ...args)))
+      isolate.compileScriptSync('new ' + function() {
+        const ivm = _ivm
+        const on = _on
+        const emit = _emit
+        delete _ivm
+        delete _on
+        delete _emit
+        global.hub = {
+          on: (e, cb) => on.applyIgnored(undefined, [
+            new ivm.ExternalCopy(e).copyInto(), new ivm.Reference(cb)]),
+          emit: (...args) => emit.applyIgnored(undefined,
+            args.map(arg => new ivm.ExternalCopy(arg).copyInto()))
+        }
+      }).runSync(context)
 
-  isolate.compileScriptSync('new ' + function() {
-    const ivm = _ivm
-    const log = _log
-    const error = _error
-    delete _ivm
-    delete _log
-    delete _error
-    global.console = {
-      log: (...args) => log.applyIgnored(
-        undefined,
-        args.map(arg => new ivm.ExternalCopy(arg).copyInto())),
-      error: (...args) => error.applyIgnored(
-        undefined,
-        args.map(arg => new ivm.ExternalCopy(arg).copyInto()))
-    }
-  }).runSync(context)
-
-  const hostile = isolate.compileScriptSync(app.code)
-  hostile.run(context).catch(err => {
-    if (err.stack) return emit(app.appId, err.stack)
-    emit(app.appId, err.toString())
-  })
-
-  instances[app.appId] = {
+      const hostile = isolate.compileScriptSync(app.code)
+      hostile.run(context).catch(err => {
+        if (err.stack) return outgoing.emit('log', err.stack)
+        outgoing.emit('log', err.toString())
+      })
+    },
     stop: () => {
-
+      if (!isolate) return
+      incoming.unhandledOff(internal.emit)
+      internal = null
+      isolate.dispose()
+      isolate = null
+    },
+    update: (app) => {
+      code = app.code
+      result.stop()
+      result.start()
     }
   }
+  return result
 }
 
 module.exports = {
-  start: () => Object.values(access.apps).forEach(run),
-  run,
-  on: (appId, cb) => {
-    if (!listeners[appId]) listeners[appId] = []
-    listeners[appId].push(cb)
+  load: () => Object.values(access.apps).forEach(module.exports.run),
+  start: (appId) => {
+    if (!instances[appId]) return
+    instances[appId].start()
   },
-  off: (appId, cb) => {
-    const index = listeners[appId].indexOf(cb)
-    if (index > -1) listeners[appId].splice(index, 1)
+  stop: (appId) => {
+    if (!instances[appId]) return
+    instances[appId].stop()
+  },
+  update: (app) => {
+    if (!instances[app.appId]) return
+    instances[appId].update(app)
+  },
+  run: (app) => {
+    if (!instances[app.appId]) {
+      const instance = create(app)
+      instances[app.appId] = instance
+      instance.start()
+    } else { instances[app.appId].update(app) }
+  },
+  on: (appId, e, cb) => {
+    if (!instances[appId]) return
+    instances[appId].on(e, cb)
+  },
+  off: (appId, e, cb) => {
+    if (!instances[appId]) return
+    instances[appId].off(e, cb)
+  },
+  emit: (appId, e, ...args) => {
+    if (!instances[appId]) return
+    instances[appId].emit(e, ...args)
   }
 }

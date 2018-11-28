@@ -27,7 +27,7 @@ wsServer.on('connection', (socket, req) => {
 })
 
 access.load().then(() => {
-  isolate.start()
+  isolate.load()
   httpServer.listen(8080, () => {
     const version = require(__dirname + '/../package.json').version
     const host = httpServer.address().address
