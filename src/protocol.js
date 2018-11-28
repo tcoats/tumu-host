@@ -1,29 +1,28 @@
 const speakeasy = require('speakeasy')
-
+const uuid = require('uuid/v4')
+const aaa = require('adjective-adjective-animal')
 const access = require('./access')
 const tokens = require('./tokens')
-const uuid = require('uuid/v4');
 
 module.exports = {
   login: (socket, emailAddress) => {
-    console.log(emailAddress)
-    console.log(access.emails)
     if (!access.emails[emailAddress]) {
       socket.secret = speakeasy.generateSecret().base32
       socket.send('secret', socket.secret)
       return
     }
-    socket.send('challenge', null)
+    socket.send('challenge')
   },
   code: (socket, params) => {
     if (!access.emails[params.emailAddress]) {
-      if (!socket.secret) return socket.send('failed', null)
+      if (!socket.secret)
+        return socket.send('error', 'No secret has been generated')
       if (!speakeasy.totp.verify({
         secret: socket.secret,
         encoding: 'base32',
         token: params.code,
         window: 2
-      })) return socket.send('failed', null)
+      })) return socket.send('error', 'Code failed verification')
       const userId = uuid()
       const token = tokens.sign({
         userId: userId,
@@ -51,22 +50,53 @@ module.exports = {
     return socket.send('login', token)
   },
   logout: (socket, params) => {
-    if (!access.emails[params.emailAddress]) return socket.send('logout', null)
+    if (!access.emails[params.emailAddress]) return socket.send('logout')
     const userId = access.emails[params.emailAddress]
     const user = access.users[userId]
     if (user.tokens[params.token]) {
       delete user.tokens[params.token]
       access.setUser(userId, user)
     }
-    socket.send('logout', null)
+    socket.send('logout')
   },
-  new: (socket, params) => {
-    socket.send('new', null)
+  new: (socket) => {
+    if (!socket.token) return socket.send('error', 'No token supplied')
+    const payload = tokens.verify(socket.token)
+    if (!payload || !payload.userId) return socket.send('error', 'Token invalid')
+    aaa().then((appId) => {
+      const app = {
+        appId: appId,
+        userId: payload.userId,
+        code: ''
+      }
+      access.setApp(appId, app)
+      socket.send('new', appId)
+    })
   },
   publish: (socket, params) => {
-    socket.send('publish', null)
+    if (!socket.token) return socket.send('error', 'No token supplied')
+    const payload = tokens.verify(socket.token)
+    if (!payload || !payload.userId) return socket.send('error', 'Token invalid')
+    if (!params.app) return socket.send('error')
+    if (!access.apps[params.app]) return socket.send('error', 'App not found')
+    const app = access.apps[params.app]
+    app.code = params.code
+    access.setApp(params.app, app)
+    socket.send('publish')
   },
   logs: (socket, params) => {
-    socket.send('logs', null)
+    if (!socket.token) return socket.send('error', 'No token supplied')
+    const payload = tokens.verify(socket.token)
+    if (!payload || !payload.userId) return socket.send('error', 'Token invalid')
+    let count = 0
+    let handle = setInterval(() => {
+      if (socket.isclosed) {
+        clearInterval(handle)
+        handle = null
+        return
+      }
+      count++
+      socket.send('log', count)
+    }, 1000)
   }
 }

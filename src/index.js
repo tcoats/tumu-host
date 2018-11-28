@@ -10,9 +10,10 @@ const wsServer = new WebSocket.Server({ server: httpServer })
 wsServer.on('connection', (socket, req) => {
   const api = {
     send: (command, params) => socket.send(JSON.stringify([command, params])),
-    close: () => socket.terminate()
+    close: () => socket.terminate(),
+    isclosed: false
   }
-  if (req.headers.token) socket.token = req.headers.token
+  if (req.headers.token) api.token = req.headers.token
   socket.on('message', (data) => {
     let payload = null
     try { payload = JSON.parse(data) }
@@ -21,6 +22,7 @@ wsServer.on('connection', (socket, req) => {
       return socket.terminate()
     protocol[payload[0]](api, payload[1])
   })
+  socket.on('close', () => api.isclosed = true)
 })
 
 access.load().then(() =>

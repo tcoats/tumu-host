@@ -14,7 +14,8 @@ const loadAll = (prefix) => new Promise((resolve, reject) => {
 const result = {
   load: () => Promise.all([
     loadAll('user').then((users) => result.users = users ),
-    loadAll('email').then((emails) => result.emails = emails)
+    loadAll('email').then((emails) => result.emails = emails),
+    loadAll('app').then((apps) => result.apps = apps)
   ]),
   users: {},
   setUser: (id, user) => {
@@ -25,6 +26,11 @@ const result = {
   setEmail: (emailAddress, userId) => {
     result.emails[emailAddress] = userId
     db.put(`email:${emailAddress}`, JSON.stringify(userId))
+  },
+  apps: {},
+  setApp: (id, app) => {
+    result.apps[id] = app
+    db.put(`app:${id}`, JSON.stringify(app))
   }
 }
 module.exports = result
