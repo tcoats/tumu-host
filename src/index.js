@@ -26,19 +26,45 @@ apiWsServer.on('connection', (socket, req) => {
   socket.on('close', () => api.isclosed = true)
 })
 
-const port = process.env.TUMU_PORT || 8080
-const httpServer = http.createServer()
-const wsServer = new WebSocket.Server({ server: httpServer })
-wsServer.on('connection', (socket, req) => {
+const findApp = (req) => {
+  let app = null
+  // match based on explicit header
+  if (req.headers.TUMU_APP && access.apps[req.headers.TUMU_APP])
+    app = access.apps[req.headers.TUMU_APP]
+  // match based on subdomain
+  if (!app && req.headers.host) {
+    const test = req.headers.host.split(/[:./]+/)[0]
+    if (access.apps[test]) app = access.apps[test]
+  }
+  // // match based on first directory of path
+  // if (!app) {
+  //   const chunks = req.url.split(/[/]+/)
+  //   if (chunks.length > 1 && access.apps[chunks[1]])
+  //     app = access.apps[chunks[1]]
+  // }
+  return app
+}
 
+const port = process.env.TUMU_PORT || 8080
+const httpServer = http.createServer((req, res) => {
+  const app = findApp(req)
+  if (!app) {
+    res.writeHead(404, { 'Content-Type': 'text/plain' })
+    res.end('App not found')
+  }
+  isolate.emit(app.appId, 'req', req, res)
+})
+const wsServer = new WebSocket.Server({ server: httpServer })
+wsServer.on('connection', (socket, res) => {
+  socket.on('message', (message) => console.log(message))
+  socket.send('something')
 })
 
-Promise.all([
-  access.open(),
-  isolate.open(),
+access.open().then(() => isolate.open())
+.then(() => Promise.all([
   new Promise((resolve) => apiHttpServer.listen(apiPort, resolve)),
   new Promise((resolve) => httpServer.listen(port, resolve))
-])
+]))
 .then(() => {
   console.log(`Nau mai tumu · v${require(__dirname + '/../package.json').version} · api@${apiHttpServer.address().address}:${apiHttpServer.address().port} · web@${httpServer.address().address}:${httpServer.address().port}`)
   shutdown = () => Promise.all([

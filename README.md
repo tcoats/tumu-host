@@ -14,3 +14,5 @@ yarn start
 - [ ] Configuration options - port, https / wss
 - [ ] stdlib inside the isolate
 - [ ] Pass requests, responses and websockets to isolate
+- [ ] CNAME stuff?
+- [ ] Storage

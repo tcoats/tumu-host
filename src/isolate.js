@@ -17,29 +17,41 @@ const create = (app) => {
     start: () => {
       isolate = new ivm.Isolate()
       internal = hub()
+      // let emitEmitter = null
+      let publish = () => {}
+      internal.on('req', (req, res) => {
+        publish('req', req.url)
+        res.writeHead(200, { 'Content-Type': 'text/plain' })
+        res.end('okay')
+      })
       incoming.unhandled(internal.emit)
+      internal.unhandled(publish)
       isolate.createContext().then((context) => Promise.all([
         context.global.set('global', context.global.derefInto()),
         context.global.set('_ivm', ivm),
-        context.global.set('_on', new ivm.Reference((e, cb) =>
-          internal.on(e, (...args) => cb.applyIgnored(
+        context.global.set('_emit', new ivm.Reference(outgoing.emit)),
+        context.global.set('_on', new ivm.Reference((fn) => {
+          publish = (...args) => fn.applyIgnored(
             undefined,
-            args.map(arg => new ivm.ExternalCopy(arg).copyInto()))))),
-        context.global.set('_emit', new ivm.Reference(outgoing.emit))
+            args.map(arg => new ivm.ExternalCopy(arg).copyInto()))
+        }))
       ])
       .then(() => isolate.compileScript('new ' + function() {
-        const ivm = _ivm
-        const on = _on
-        const emit = _emit
-        delete _ivm
-        delete _on
-        delete _emit
+        const ivm = _ivm; delete _ivm
+        const emit = _emit; delete _emit
+        const listeners = {}
         global.hub = {
-          on: (e, cb) => on.applyIgnored(undefined, [
-            new ivm.ExternalCopy(e).copyInto(), new ivm.Reference(cb)]),
+          on: (e, fn) => {
+            if (!listeners[e]) listeners[e] = []
+            listeners[e].push(fn)
+          },
           emit: (...args) => emit.applyIgnored(undefined,
             args.map(arg => new ivm.ExternalCopy(arg).copyInto()))
         }
+        _on.applyIgnored(undefined, [
+          new ivm.Reference((e, ...args) =>
+            listeners[e].forEach((fn) => fn(...args)))])
+        delete _on
       }))
       .then((script) => script.run(context))
       .then(() => isolate.compileScript(app.code))
@@ -66,8 +78,8 @@ const create = (app) => {
 }
 
 module.exports = {
-  open: () => Object.values(access.apps).forEach(module.exports.run),
-  close: () =>  Object.keys(instances).forEach(module.exports.stop),
+  open: () => Promise.resolve(Object.values(access.apps).forEach(module.exports.run)),
+  close: () =>  Promise.resolve(Object.keys(instances).forEach(module.exports.stop)),
   start: (appId) => {
     if (!instances[appId]) return
     instances[appId].start()

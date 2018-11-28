@@ -19,7 +19,7 @@ const result = {
     loadAll('email').then((emails) => result.emails = emails),
     loadAll('app').then((apps) => result.apps = apps)
   ]),
-  close: () => { },
+  close: () => Promise.resolve(),
   users: {},
   setUser: (id, user) => {
     result.users[id] = user
