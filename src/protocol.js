@@ -100,5 +100,10 @@ module.exports = {
       socket.send('log', args)
     }
     isolate.on(app, 'log', log)
+    const error = (...args) => {
+      if (socket.isclosed) return isolate.off(app, 'error', error)
+      socket.send('error', args)
+    }
+    isolate.on(app, 'error', error)
   }
 }

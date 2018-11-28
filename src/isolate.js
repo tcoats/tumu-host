@@ -18,17 +18,16 @@ const create = (app) => {
       isolate = new ivm.Isolate()
       internal = hub()
       incoming.unhandled(internal.emit)
-      const context = isolate.createContextSync()
-      const jail = context.global
-      jail.setSync('global', jail.derefInto())
-      jail.setSync('_ivm', ivm)
-      jail.setSync('_on', new ivm.Reference((e, cb) =>
-        internal.on(e, (...args) => cb.applyIgnored(
-          undefined,
-          args.map(arg => new ivm.ExternalCopy(arg).copyInto())))))
-      jail.setSync('_emit', new ivm.Reference(outgoing.emit))
-
-      isolate.compileScriptSync('new ' + function() {
+      isolate.createContext().then((context) => Promise.all([
+        context.global.set('global', context.global.derefInto()),
+        context.global.set('_ivm', ivm),
+        context.global.set('_on', new ivm.Reference((e, cb) =>
+          internal.on(e, (...args) => cb.applyIgnored(
+            undefined,
+            args.map(arg => new ivm.ExternalCopy(arg).copyInto()))))),
+        context.global.set('_emit', new ivm.Reference(outgoing.emit))
+      ])
+      .then(() => isolate.compileScript('new ' + function() {
         const ivm = _ivm
         const on = _on
         const emit = _emit
@@ -41,12 +40,13 @@ const create = (app) => {
           emit: (...args) => emit.applyIgnored(undefined,
             args.map(arg => new ivm.ExternalCopy(arg).copyInto()))
         }
-      }).runSync(context)
-
-      const hostile = isolate.compileScriptSync(app.code)
-      hostile.run(context).catch(err => {
-        if (err.stack) return outgoing.emit('log', err.stack)
-        outgoing.emit('log', err.toString())
+      }))
+      .then((script) => script.run(context))
+      .then(() => isolate.compileScript(app.code))
+      .then((hostile) => hostile.run(context)))
+      .catch(err => {
+        if (err.stack) return outgoing.emit('error', err.stack)
+        outgoing.emit('error', err.toString())
       })
     },
     stop: () => {
@@ -66,7 +66,8 @@ const create = (app) => {
 }
 
 module.exports = {
-  load: () => Object.values(access.apps).forEach(module.exports.run),
+  open: () => Object.values(access.apps).forEach(module.exports.run),
+  close: () =>  Object.keys(instances).forEach(module.exports.stop),
   start: (appId) => {
     if (!instances[appId]) return
     instances[appId].start()

@@ -14,11 +14,12 @@ const writeOne = (prefix, key, value) =>
   db.put(`${prefix}:${key}`, JSON.stringify(value))
 
 const result = {
-  load: () => Promise.all([
+  open: () => Promise.all([
     loadAll('user').then((users) => result.users = users ),
     loadAll('email').then((emails) => result.emails = emails),
     loadAll('app').then((apps) => result.apps = apps)
   ]),
+  close: () => { },
   users: {},
   setUser: (id, user) => {
     result.users[id] = user

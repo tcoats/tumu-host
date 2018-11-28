@@ -5,10 +5,10 @@ const access = require('./access')
 const protocol = require('./protocol')
 const isolate = require('./isolate')
 
-const httpServer = http.createServer()
-
-const wsServer = new WebSocket.Server({ server: httpServer })
-wsServer.on('connection', (socket, req) => {
+const apiPort = process.env.TUMU_API_PORT || 8081
+const apiHttpServer = http.createServer()
+const apiWsServer = new WebSocket.Server({ server: apiHttpServer })
+apiWsServer.on('connection', (socket, req) => {
   const api = {
     send: (command, params) => socket.send(JSON.stringify([command, params])),
     close: () => socket.terminate(),
@@ -26,23 +26,30 @@ wsServer.on('connection', (socket, req) => {
   socket.on('close', () => api.isclosed = true)
 })
 
-access.load().then(() => {
-  isolate.load()
-  httpServer.listen(8080, () => {
-    const version = require(__dirname + '/../package.json').version
-    const host = httpServer.address().address
-    const boundport = httpServer.address().port
-    console.log(`tumu ${version} listening on ${host}:${boundport}`)
-    shutdown = () => {
-      console.log('Ōhākī shutting down')
-      // hub.emit('shutdown', null).then(() => {
-        wsServer.close()
-        httpServer.close()
-        console.log('E noho rā')
-        process.exit(0)
-      // })
-    }
-    process.on('SIGTERM', shutdown)
-    process.on('SIGINT', shutdown)
-  })
+const port = process.env.TUMU_PORT || 8080
+const httpServer = http.createServer()
+const wsServer = new WebSocket.Server({ server: httpServer })
+wsServer.on('connection', (socket, req) => {
+
+})
+
+Promise.all([
+  access.open(),
+  isolate.open(),
+  new Promise((resolve) => apiHttpServer.listen(apiPort, resolve)),
+  new Promise((resolve) => httpServer.listen(port, resolve))
+])
+.then(() => {
+  console.log(`Nau mai tumu · v${require(__dirname + '/../package.json').version} · api@${apiHttpServer.address().address}:${apiHttpServer.address().port} · web@${httpServer.address().address}:${httpServer.address().port}`)
+  shutdown = () => Promise.all([
+    apiWsServer.close(),
+    apiHttpServer.close(),
+    wsServer.close(),
+    httpServer.close()
+  ])
+  .then(() => console.log('E noho rā tumu'))
+  process.once('SIGTERM', () => shutdown().then(() => process.exit(0)))
+  process.once('SIGINT', () => shutdown().then(() => process.exit(0)))
+  process.once('SIGUSR2', () => shutdown().then(() =>
+    process.kill(process.pid, 'SIGUSR2')))
 })
