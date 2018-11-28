@@ -1,0 +1,19 @@
+{
+  "name": "tumu-host",
+  "version": "1.0.0",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node ./src/"
+  },
+  "repository": "git@github.com:tcoats/tumu-host.git",
+  "author": "Thomas Coats <github@voodoolabs.net>",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^6.1.0",
+    "jsonwebtoken": "^8.4.0",
+    "level": "^4.0.0",
+    "speakeasy": "^2.0.0",
+    "uuid": "^3.3.2",
+    "ws": "^6.1.2"
+  }
+}
