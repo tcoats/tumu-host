@@ -304,6 +304,11 @@ isarray@~1.0.0:
   resolved "https://registry.yarnpkg.com/isarray/-/isarray-1.0.0.tgz#bb935d48582cba168c06834957a54a3e07124f11"
   integrity sha1-u5NdSFgsuhaMBoNJV6VKPgcSTxE=
 
+isolated-vm@^1.7.4:
+  version "1.7.4"
+  resolved "https://registry.yarnpkg.com/isolated-vm/-/isolated-vm-1.7.4.tgz#a5e70f78500fe9c3191224ccd3d2958c91839928"
+  integrity sha512-zvfbvM0aFje4AsGlLdLS+m/o6Ra6ENsRX2KviJMKzUAH9msamrALsaJjHCGcESBqwcqzCuEnr/gq1O9Ig2mO2Q==
+
 jsonwebtoken@^8.4.0:
   version "8.4.0"
   resolved "https://registry.yarnpkg.com/jsonwebtoken/-/jsonwebtoken-8.4.0.tgz#8757f7b4cb7440d86d5e2f3becefa70536c8e46a"

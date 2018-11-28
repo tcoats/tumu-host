@@ -3,6 +3,7 @@ const uuid = require('uuid/v4')
 const aaa = require('adjective-adjective-animal')
 const access = require('./access')
 const tokens = require('./tokens')
+const isolate = require('./isolate')
 
 module.exports = {
   login: (socket, emailAddress) => {
@@ -77,26 +78,24 @@ module.exports = {
     if (!socket.token) return socket.send('error', 'No token supplied')
     const payload = tokens.verify(socket.token)
     if (!payload || !payload.userId) return socket.send('error', 'Token invalid')
-    if (!params.app) return socket.send('error')
+    if (!params.app) return socket.send('error', 'App not specified')
     if (!access.apps[params.app]) return socket.send('error', 'App not found')
     const app = access.apps[params.app]
     app.code = params.code
     access.setApp(params.app, app)
+    isolate.run(app)
     socket.send('publish')
   },
-  logs: (socket, params) => {
+  logs: (socket, app) => {
     if (!socket.token) return socket.send('error', 'No token supplied')
     const payload = tokens.verify(socket.token)
     if (!payload || !payload.userId) return socket.send('error', 'Token invalid')
-    let count = 0
-    let handle = setInterval(() => {
-      if (socket.isclosed) {
-        clearInterval(handle)
-        handle = null
-        return
-      }
-      count++
-      socket.send('log', count)
-    }, 1000)
+    if (!app) return socket.send('error', 'App not specified')
+    if (!access.apps[app]) return socket.send('error', 'App not found')
+    const log = (...args) => {
+      if (socket.isclosed) return isolate.off(app, log)
+      socket.send('log', args)
+    }
+    isolate.on(app, log)
   }
 }

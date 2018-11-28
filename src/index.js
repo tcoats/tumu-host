@@ -3,6 +3,7 @@ const http = require('http')
 const WebSocket = require('ws')
 const access = require('./access')
 const protocol = require('./protocol')
+const isolate = require('./isolate')
 
 const httpServer = http.createServer()
 
@@ -25,7 +26,8 @@ wsServer.on('connection', (socket, req) => {
   socket.on('close', () => api.isclosed = true)
 })
 
-access.load().then(() =>
+access.load().then(() => {
+  isolate.start()
   httpServer.listen(8080, () => {
     const version = require(__dirname + '/../package.json').version
     const host = httpServer.address().address
@@ -43,4 +45,4 @@ access.load().then(() =>
     process.on('SIGTERM', shutdown)
     process.on('SIGINT', shutdown)
   })
-)
+})
