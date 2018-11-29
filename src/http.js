@@ -10,13 +10,13 @@ const middleware = (next) => (req, res) =>
       jsonParser(req, res, () => next(req, res))))
 
 module.exports = (internal, publish, emitter) => {
-  internal.on('req', middleware((req, res) => {
+  internal.on('http', middleware((req, res) => {
     const payload = {}
     const properties = ['url', 'headers', 'httpVersion', 'method', 'body']
     properties.forEach((key) => payload[key] = req[key])
     payload.url = url.parse(payload.url, true)
 
-    const socket = emitter('req', payload)
+    const socket = emitter('http', payload)
 
     const events = ['finish', 'error']
     events.forEach((e) => res.on(e, (...args) => {

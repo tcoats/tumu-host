@@ -50,14 +50,15 @@ const httpServer = http.createServer((req, res) => {
   const app = findApp(req)
   if (!app) {
     res.writeHead(404, { 'Content-Type': 'text/plain' })
-    res.end('App not found')
+    return res.end('App not found')
   }
-  isolate.emit(app.appId, 'req', req, res)
+  isolate.emit(app.appId, 'http', req, res)
 })
 const wsServer = new WebSocket.Server({ server: httpServer })
-wsServer.on('connection', (socket, res) => {
-  socket.on('message', (message) => console.log(message))
-  socket.send('something')
+wsServer.on('connection', (ws, req) => {
+  const app = findApp(req)
+  if (!app) return ws.destroy()
+  isolate.emit(app.appId, 'websocket', ws, req)
 })
 
 access.open().then(() => isolate.open())

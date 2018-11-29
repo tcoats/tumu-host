@@ -1,6 +1,7 @@
 const ivm = require('isolated-vm')
 const hub = require('odo-hub')
-const bridge = require('./bridge')
+const http = require('./http')
+const websocket = require('./websocket')
 const access = require('./access')
 const instances = {}
 
@@ -27,7 +28,11 @@ const create = (app) => {
       }
       incoming.unhandled(internal.emit)
       internal.unhandled(publish)
-      bridge(
+      http(
+        internal,
+        (...args) => publish(...args),
+        (...args) => emitter(...args))
+      websocket(
         internal,
         (...args) => publish(...args),
         (...args) => emitter(...args))
@@ -84,6 +89,10 @@ const create = (app) => {
           },
           emit: (...args) => emit.apply(undefined,
             args.map(arg => new ivm.ExternalCopy(arg).copyInto()))
+        }
+        global.console = {
+          log: (...args) => hub.emit('log', ...args),
+          error: (...args) => hub.emit('error', ...args)
         }
         _on.apply(undefined, [
           new ivm.Reference((e, ...args) =>

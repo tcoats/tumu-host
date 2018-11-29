@@ -11,8 +11,12 @@ yarn start
 # Todo
 - [x] Errors need a good way to be logged
 - [x] Hub available
-- [ ] Configuration options - port, https / wss
-- [ ] stdlib inside the isolate
-- [ ] Pass requests, responses and websockets to isolate
-- [ ] CNAME stuff?
+- [x] Configuration options - port
+- [x] stdlib inside the isolate
+- [x] Emitter api
+- [x] Pass requests, responses
+- [x] Websockets
 - [ ] Storage
+- [ ] Fetch
+- [ ] CNAME support?
+- [ ] Support for websocket open
