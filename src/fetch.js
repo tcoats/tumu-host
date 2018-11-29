@@ -5,14 +5,18 @@ const axiosResponseProperties = ['data', 'headers', 'statusText', 'status']
 
 module.exports = (params) =>
   params.context.global.set('_fetch', new ivm.Reference((params, resolve, reject) => {
-    axios(params).then((res) => {
-      const payload = {}
-      axiosResponseProperties.forEach((key) => payload[key] = res[key])
-      resolve
-        .apply(undefined, [new ivm.ExternalCopy(payload).copyInto()])
-        .catch(() => {})
-    }).catch((err) =>
-      reject.apply(undefined, [new ivm.ExternalCopy(err).copyInto()]))
+    try {
+      axios(params).then((res) => {
+        const payload = {}
+        axiosResponseProperties.forEach((key) => payload[key] = res[key])
+        resolve
+          .apply(undefined, [new ivm.ExternalCopy(payload).copyInto()])
+          .catch(() => {})
+      }).catch((err) =>
+        reject.apply(undefined, [new ivm.ExternalCopy(err).copyInto()]))
+    } catch (err) {
+      reject.apply(undefined, [new ivm.ExternalCopy(err).copyInto()])
+    }
   }))
   .then(() => params.isolate.compileScript('new ' + function() {
     const ivm = _ivm

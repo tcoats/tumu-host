@@ -22,16 +22,19 @@ const create = (app) => {
       isolate = new ivm.Isolate()
       internal = hub()
       isolate.createContext().then((context) => {
-        const params = { isolate, context, internal, incoming, outgoing }
         return Promise.all([
           context.global.set('global', context.global.derefInto()),
           context.global.set('_ivm', ivm)
         ])
-        .then(() => bridge(params))
+        .then(() => bridge({
+          isolate, context,
+          internal, incoming, outgoing,
+          app, code
+        }))
         .then(() => isolate.compileScript('delete _ivm'))
         .then((script) => script.run(context))
-        .then(() => isolate.compileScript(app.code))
-        .then((hostile) => hostile.run(context))
+        .then(() => isolate.compileScript(code))
+        .then((script) => script.run(context))
       })
       .catch(err => {
         if (err.stack) return outgoing.emit('error', err.stack)
@@ -78,11 +81,10 @@ module.exports = {
     access.setApp(appId, app)
   },
   run: (app) => {
-    if (!instances[app.appId]) {
-      const instance = create(app)
-      instances[app.appId] = instance
-      instance.start()
-    } else { instances[app.appId].update(app) }
+    if (instances[app.appId]) return instances[app.appId].update(app)
+    const instance = create(app)
+    instances[app.appId] = instance
+    instance.start()
   },
   start: (appId) => { if (instances[appId]) instances[appId].start()},
   stop: (appId) => { if (instances[appId]) instances[appId].stop()},

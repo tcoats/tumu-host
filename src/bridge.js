@@ -2,6 +2,7 @@ const ivm = require('isolated-vm')
 const http = require('./http')
 const websocket = require('./websocket')
 const fetch = require('./fetch')
+const store = require('./store')
 
 module.exports = (params) => {
   let publish = () => {}
@@ -14,13 +15,13 @@ module.exports = (params) => {
   }
   Object.assign(childparams, params)
   return Promise.all([
-    params.context.global.set('_emit', new ivm.Reference(params.outgoing.emit)),
-    params.context.global.set('_on', new ivm.Reference((fn) => {
+    params.context.global.set('_bridge_emit', new ivm.Reference(params.outgoing.emit)),
+    params.context.global.set('_bridge_on', new ivm.Reference((fn) => {
       publish = (...args) => fn.apply(
         undefined,
         args.map(arg => new ivm.ExternalCopy(arg).copyInto()))
     })),
-    params.context.global.set('_emitter', new ivm.Reference((fn) => {
+    params.context.global.set('_bridge_emitter', new ivm.Reference((fn) => {
       emitter = (e, ...args) => {
         const guestListeners = []
         const hostListeners = {}
@@ -43,24 +44,27 @@ module.exports = (params) => {
         ])
         // TODO: Fix TypeError: A non-transferable value was passed
         .catch(() => {})
-        return {
+        const result = {
           on: (e, fn) => {
             if (!hostListeners[e]) hostListeners[e] = []
             hostListeners[e].push(fn)
+            return result
           },
           emit: (...args) => guestListeners.forEach((fn) => fn(...args))
         }
+        return result
       }
     }))
   ])
   .then(() => params.isolate.compileScript('new ' + function() {
     const ivm = _ivm
-    const emit = _emit; delete _emit
+    const emit = _bridge_emit; delete _bridge_emit
     const listeners = {}
     global.hub = {
       on: (e, fn) => {
         if (!listeners[e]) listeners[e] = []
         listeners[e].push(fn)
+        return global.hub
       },
       emit: (...args) => emit.apply(undefined,
         args.map(arg => new ivm.ExternalCopy(arg).copyInto()))
@@ -70,11 +74,11 @@ module.exports = (params) => {
       error: (...args) => hub.emit('error', ...args)
     }
 
-    _on.apply(undefined, [
+    _bridge_on.apply(undefined, [
       new ivm.Reference((e, ...args) =>
         listeners[e].forEach((fn) => fn(...args)))])
-    delete _on
-    _emitter.apply(undefined, [
+    delete _bridge_on
+    _bridge_emitter.apply(undefined, [
       new ivm.Reference((e, on, emit, ...args) => {
         if (!listeners[e]) return
         const emitListeners = {}
@@ -82,20 +86,23 @@ module.exports = (params) => {
           new ivm.Reference((e, ...args) => {
             emitListeners[e].forEach((fn) => fn(...args))
           })])
-        listeners[e].forEach((fn) => fn({
+        const result = {
           on: (e, fn) => {
             if (!emitListeners[e]) emitListeners[e] = []
             emitListeners[e].push(fn)
+            return result
           },
           emit: (...args) => emit.apply(undefined,
             args.map(arg => new ivm.ExternalCopy(arg).copyInto()))
-        }, ...args))
+        }
+        listeners[e].forEach((fn) => fn(result, ...args))
       })
     ])
-    delete _emitter
+    delete _bridge_emitter
   }))
   .then((script) => script.run(params.context))
   .then(() => http(childparams))
   .then(() => websocket(childparams))
   .then(() => fetch(params))
+  .then(() => store(params))
 }
