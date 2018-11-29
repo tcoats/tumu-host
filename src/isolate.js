@@ -1,12 +1,10 @@
 const ivm = require('isolated-vm')
-const hub = require('odo-hub')
 const axios = require('axios')
-const http = require('./http')
-const websocket = require('./websocket')
+const hub = require('odo-hub')
 const access = require('./access')
+const fetch = require('./fetch')
+const communications = require('./communications')
 const instances = {}
-
-const axiosResponseProperties = ['data', 'headers', 'statusText', 'status']
 
 const create = (app) => {
   console.log('creating', app.appId)
@@ -24,135 +22,14 @@ const create = (app) => {
       console.log('starting', app.appId)
       isolate = new ivm.Isolate()
       internal = hub()
-      let publish = () => {}
-      let emitter = () => {
-        return {
-          on: () => {},
-          emit: () => {}
-        }
-      }
-      incoming.unhandled(internal.emit)
-      internal.unhandled(publish)
-      http(
-        internal,
-        (...args) => publish(...args),
-        (...args) => emitter(...args))
-      websocket(
-        internal,
-        (...args) => publish(...args),
-        (...args) => emitter(...args))
       isolate.createContext().then((context) => Promise.all([
         context.global.set('global', context.global.derefInto()),
-        context.global.set('_ivm', ivm),
-        context.global.set('_fetch', new ivm.Reference((params, resolve, reject) => {
-          axios(params).then((res) => {
-            const payload = {}
-            axiosResponseProperties.forEach((key) => payload[key] = res[key])
-            resolve.apply(undefined, [new ivm.ExternalCopy(payload).copyInto()])
-          }).catch((err) =>
-            reject.apply(undefined, [new ivm.ExternalCopy(err).copyInto()]))
-        })),
-        context.global.set('_emit', new ivm.Reference(outgoing.emit)),
-        context.global.set('_on', new ivm.Reference((fn) => {
-          publish = (...args) => fn.apply(
-            undefined,
-            args.map(arg => new ivm.ExternalCopy(arg).copyInto()))
-        })),
-        context.global.set('_emitter', new ivm.Reference((fn) => {
-          emitter = (e, ...args) => {
-            const guestListeners = []
-            const hostListeners = {}
-            fn.apply(undefined, [
-              new ivm.ExternalCopy(e).copyInto(),
-              new ivm.Reference((subscriber) => {
-                guestListeners.push((...args) => {
-                  subscriber.apply(
-                    undefined,
-                    args.map(arg => new ivm.ExternalCopy(arg).copyInto()))
-                  // TODO: Fix TypeError: A non-transferable value was passed
-                  .catch(() => {})
-                })
-              }),
-              new ivm.Reference((e, ...args) => {
-                if (!hostListeners[e]) return
-                hostListeners[e].forEach((fn) => fn(...args))
-              }),
-              ...args.map(arg => new ivm.ExternalCopy(arg).copyInto())
-            ])
-            // TODO: Fix TypeError: A non-transferable value was passed
-            .catch(() => {})
-            return {
-              on: (e, fn) => {
-                if (!hostListeners[e]) hostListeners[e] = []
-                hostListeners[e].push(fn)
-              },
-              emit: (...args) => guestListeners.forEach((fn) => fn(...args))
-            }
-          }
-        }))
+        context.global.set('_ivm', ivm)
       ])
+      .then(() => communications(isolate, context, internal, incoming, outgoing))
+      .then(() => fetch(isolate, context, internal, incoming, outgoing))
       .then(() => isolate.compileScript('new ' + function() {
-        const ivm = _ivm; delete _ivm
-        const emit = _emit; delete _emit
-        const fetch = _fetch; delete _fetch
-        const listeners = {}
-        global.hub = {
-          on: (e, fn) => {
-            if (!listeners[e]) listeners[e] = []
-            listeners[e].push(fn)
-          },
-          emit: (...args) => emit.apply(undefined,
-            args.map(arg => new ivm.ExternalCopy(arg).copyInto()))
-        }
-        global.console = {
-          log: (...args) => hub.emit('log', ...args),
-          error: (...args) => hub.emit('error', ...args)
-        }
-        global.fetch = (params) => new Promise((resolve, reject) =>
-          fetch.apply(undefined, [
-             new ivm.ExternalCopy(params).copyInto(),
-             new ivm.Reference(resolve),
-             new ivm.Reference(reject)
-          ]))
-        global.fetch.request = (...args) => global.fetch(...args)
-        const urlOnlyMethods = ['get', 'delete', 'head', 'options']
-        urlOnlyMethods.forEach((method) =>
-          global.fetch[method] = (url, config) => {
-            const params = { url: url, method: method }
-            if (config) Object.assign(params, config)
-            return global.fetch(params)
-          })
-        const urlAndDataMethods = ['post', 'put', 'patch']
-        urlAndDataMethods.forEach((method) =>
-          global.fetch[method] = (url, data, config) => {
-            const params = { url: url, data: data, method: method }
-            if (config) Object.assign(params, config)
-            return global.fetch(params)
-          })
-
-        _on.apply(undefined, [
-          new ivm.Reference((e, ...args) =>
-            listeners[e].forEach((fn) => fn(...args)))])
-        delete _on
-        _emitter.apply(undefined, [
-          new ivm.Reference((e, on, emit, ...args) => {
-            if (!listeners[e]) return
-            const emitListeners = {}
-            on.apply(undefined, [
-              new ivm.Reference((e, ...args) => {
-                emitListeners[e].forEach((fn) => fn(...args))
-              })])
-            listeners[e].forEach((fn) => fn({
-              on: (e, fn) => {
-                if (!emitListeners[e]) emitListeners[e] = []
-                emitListeners[e].push(fn)
-              },
-              emit: (...args) => emit.apply(undefined,
-                args.map(arg => new ivm.ExternalCopy(arg).copyInto()))
-            }, ...args))
-          })
-        ])
-        delete _emitter
+        delete _ivm
       }))
       .then((script) => script.run(context))
       .then(() => isolate.compileScript(app.code))

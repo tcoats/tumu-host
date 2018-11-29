@@ -18,15 +18,18 @@ yarn start
 - [x] Websockets
 - [x] Fetch
 - [x] map domains to apps
+- [ ] Refactor isolate file into stages
 - [ ] Simple key value storage - leveldb
+- [ ] Cron subscriptions
 - [ ] Support outgoing websocket connections
 - [ ] Lifecycle events
-- [ ] Cron subscriptions
+- [ ] Secret management?
 
 # Fixes
 - [ ] Support for websocket open event (currently a race condition)
 - [ ] Track down conversion errors
 - [ ] Detect subcriptions to http and websocket
+- [ ] aaa collision detection
 
 # SaaS
 - [ ] CNAME support
