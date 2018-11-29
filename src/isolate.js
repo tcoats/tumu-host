@@ -9,6 +9,7 @@ const instances = {}
 const axiosResponseProperties = ['data', 'headers', 'statusText', 'status']
 
 const create = (app) => {
+  console.log('creating', app.appId)
   let code = app.code
   const incoming = hub()
   const outgoing = hub()
@@ -20,6 +21,7 @@ const create = (app) => {
     off: outgoing.off,
     emit: incoming.emit,
     start: () => {
+      console.log('starting', app.appId)
       isolate = new ivm.Isolate()
       internal = hub()
       let publish = () => {}
@@ -162,14 +164,16 @@ const create = (app) => {
     },
     stop: () => {
       if (!isolate) return
+      console.log('stopping', app.appId)
       incoming.unhandledOff(internal.emit)
       internal = null
       isolate.dispose()
       isolate = null
     },
     update: (app) => {
-      code = app.code
       result.stop()
+      console.log('updating', app.appId)
+      code = app.code
       result.start()
     }
   }
@@ -177,8 +181,25 @@ const create = (app) => {
 }
 
 module.exports = {
-  open: () => Promise.resolve(Object.values(access.apps).forEach(module.exports.run)),
+  open: () => Promise.resolve(Object.values(access.apps)
+    .filter((app) => !app.disabled)
+    .forEach(module.exports.run)),
   close: () =>  Promise.resolve(Object.keys(instances).forEach(module.exports.stop)),
+  enable: (appId) => {
+    if (instances[appId]) return
+    const app = access.apps[appId]
+    delete app.disabled
+    access.setApp(appId, app)
+    module.exports.run(app)
+  },
+  disable: (appId) => {
+    if (!instances[appId]) return
+    instances[appId].stop()
+    delete instances[appId]
+    const app = access.apps[appId]
+    app.disabled = true
+    access.setApp(appId, app)
+  },
   start: (appId) => {
     if (!instances[appId]) return
     instances[appId].start()

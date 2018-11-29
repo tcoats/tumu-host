@@ -60,6 +60,10 @@ const httpServer = http.createServer((req, res) => {
     res.writeHead(404, { 'Content-Type': 'text/plain' })
     return res.end('App not found')
   }
+  if (app.disabled) {
+    res.writeHead(500, { 'Content-Type': 'text/plain' })
+    return res.end('App disabled')
+  }
   isolate.emit(app.appId, 'http', req, res)
 })
 const wsServer = new WebSocket.Server({ server: httpServer })

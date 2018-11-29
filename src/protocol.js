@@ -85,6 +85,24 @@ module.exports = {
     access.setDomain(params.domain, params.app)
     socket.send('domain')
   },
+  enable: (socket, app) => {
+    if (!socket.token) return socket.send('error', 'No token supplied')
+    const payload = tokens.verify(socket.token)
+    if (!payload || !payload.userId) return socket.send('error', 'Token invalid')
+    if (!app) return socket.send('error', 'App not specified')
+    if (!access.apps[app]) return socket.send('error', 'App not found')
+    isolate.enable(app)
+    socket.send('enable')
+  },
+  disable: (socket, app) => {
+    if (!socket.token) return socket.send('error', 'No token supplied')
+    const payload = tokens.verify(socket.token)
+    if (!payload || !payload.userId) return socket.send('error', 'Token invalid')
+    if (!app) return socket.send('error', 'App not specified')
+    if (!access.apps[app]) return socket.send('error', 'App not found')
+    isolate.disable(app)
+    socket.send('disable')
+  },
   publish: (socket, params) => {
     if (!socket.token) return socket.send('error', 'No token supplied')
     const payload = tokens.verify(socket.token)
