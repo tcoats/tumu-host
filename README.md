@@ -22,6 +22,8 @@ yarn start
 - [x] Simple key value storage - leveldb
 - [x] Cron subscriptions
 - [ ] Support for outgoing websocket connections
+- [ ] Queues
+- [ ] Local mode
 
 # Fixes
 - [ ] Support for websocket open event (currently a race condition)

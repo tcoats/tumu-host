@@ -5,6 +5,9 @@
   "scripts": {
     "start": "node ./src/"
   },
+  "bin": {
+    "tumu-local": "bin/local.js"
+  },
   "repository": "git@github.com:tcoats/tumu-host.git",
   "author": "Thomas Coats <github@voodoolabs.net>",
   "license": "MIT",
