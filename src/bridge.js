@@ -1,6 +1,7 @@
 const ivm = require('isolated-vm')
 const http = require('./http')
 const websocket = require('./websocket')
+const fetch = require('./fetch')
 
 module.exports = (params) => {
   let publish = () => {}
@@ -96,4 +97,5 @@ module.exports = (params) => {
   .then((script) => script.run(params.context))
   .then(() => http(childparams))
   .then(() => websocket(childparams))
+  .then(() => fetch(params))
 }

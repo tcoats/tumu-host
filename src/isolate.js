@@ -2,8 +2,7 @@ const ivm = require('isolated-vm')
 const axios = require('axios')
 const hub = require('odo-hub')
 const access = require('./access')
-const fetch = require('./fetch')
-const communications = require('./communications')
+const bridge = require('./bridge')
 const instances = {}
 
 const create = (app) => {
@@ -28,11 +27,8 @@ const create = (app) => {
           context.global.set('global', context.global.derefInto()),
           context.global.set('_ivm', ivm)
         ])
-        .then(() => communications(params))
-        .then(() => fetch(params))
-        .then(() => isolate.compileScript('new ' + function() {
-          delete _ivm
-        }))
+        .then(() => bridge(params))
+        .then(() => isolate.compileScript('delete _ivm'))
         .then((script) => script.run(context))
         .then(() => isolate.compileScript(app.code))
         .then((hostile) => hostile.run(context))
@@ -64,7 +60,8 @@ module.exports = {
   open: () => Promise.resolve(Object.values(access.apps)
     .filter((app) => !app.disabled)
     .forEach(module.exports.run)),
-  close: () =>  Promise.resolve(Object.keys(instances).forEach(module.exports.stop)),
+  close: () =>
+    Promise.resolve(Object.keys(instances).forEach(module.exports.stop)),
   enable: (appId) => {
     if (instances[appId]) return
     const app = access.apps[appId]
@@ -80,18 +77,6 @@ module.exports = {
     app.disabled = true
     access.setApp(appId, app)
   },
-  start: (appId) => {
-    if (!instances[appId]) return
-    instances[appId].start()
-  },
-  stop: (appId) => {
-    if (!instances[appId]) return
-    instances[appId].stop()
-  },
-  update: (app) => {
-    if (!instances[app.appId]) return
-    instances[appId].update(app)
-  },
   run: (app) => {
     if (!instances[app.appId]) {
       const instance = create(app)
@@ -99,16 +84,12 @@ module.exports = {
       instance.start()
     } else { instances[app.appId].update(app) }
   },
-  on: (appId, e, cb) => {
-    if (!instances[appId]) return
-    instances[appId].on(e, cb)
-  },
-  off: (appId, e, cb) => {
-    if (!instances[appId]) return
-    instances[appId].off(e, cb)
-  },
+  start: (appId) => { if (instances[appId]) instances[appId].start()},
+  stop: (appId) => { if (instances[appId]) instances[appId].stop()},
+  update: (app) => { if (instances[app.appId]) instances[appId].update(app)},
+  on: (appId, e, cb) => { if (instances[appId]) instances[appId].on(e, cb)},
+  off: (appId, e, cb) => { if (instances[appId]) instances[appId].off(e, cb)},
   emit: (appId, e, ...args) => {
-    if (!instances[appId]) return
-    instances[appId].emit(e, ...args)
+    if (instances[appId]) instances[appId].emit(e, ...args)
   }
 }
