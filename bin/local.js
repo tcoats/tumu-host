@@ -8,6 +8,8 @@ const WebSocket = require('ws')
 fetch = require('axios')
 const httpBridge = require('../src/http')
 const websocketBridge = require('../src/websocket')
+const level = require('level-mem')
+store = level()
 
 const inputHelp = () => console.error(`
   An input file is not specified — please fix by:

@@ -34,6 +34,7 @@ yarn start
 - [x] Local mode
 - [ ] Support for outgoing websocket connections
 - [ ] Queues
+- [ ] Web-based IDE Lambda
 
 # Fixes
 - [ ] Support for websocket open event (currently a race condition)
@@ -47,6 +48,8 @@ yarn start
 - [ ] Sandboxing fetch better
 - [ ] Penetration testing isolated-vm
 - [ ] Scaling - proxy server, certificates
+- [ ] Scaling - multiple instances
+- [ ] Scaling - quorum, coordination
 - [ ] Scalable storage backend
 - [ ] Lifecycle events
 - [ ] Secret management?
