@@ -3,6 +3,16 @@ Javascript Serverless Host
 
 Use the [Tumu CLI](https://github.com/tcoats/tumu) to connect.
 
+Install globally
+
+```bash
+yarn add global tumu-host
+tumu-host
+tumu-local
+```
+
+Or clone the repo and run directly
+
 ```bash
 yarn
 yarn start
@@ -21,9 +31,9 @@ yarn start
 - [x] Refactor isolate file into stages
 - [x] Simple key value storage - leveldb
 - [x] Cron subscriptions
+- [x] Local mode
 - [ ] Support for outgoing websocket connections
 - [ ] Queues
-- [ ] Local mode
 
 # Fixes
 - [ ] Support for websocket open event (currently a race condition)
