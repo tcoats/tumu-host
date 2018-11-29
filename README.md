@@ -16,9 +16,22 @@ yarn start
 - [x] Emitter api
 - [x] Pass requests, responses
 - [x] Websockets
-- [ ] Storage
 - [x] Fetch
-- [ ] map domains to apps
-- [ ] CNAME support?
-- [ ] Support for websocket open event (currently a race condition)
+- [x] map domains to apps
+- [ ] Simple key value storage - leveldb
 - [ ] Support outgoing websocket connections
+- [ ] Lifecycle events
+- [ ] Cron subscriptions
+
+# Fixes
+- [ ] Support for websocket open event (currently a race condition)
+- [ ] Track down conversion errors
+- [ ] Detect subcriptions to http and websocket
+
+# SaaS
+- [ ] CNAME support
+- [ ] Teams, mempership, invitations, listing apps, membership etc.
+- [ ] Sandboxing fetch better
+- [ ] Penetration testing isolated-vm
+- [ ] Scaling - proxy server, certificates
+- [ ] Scalable storage backend
