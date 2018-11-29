@@ -9,22 +9,23 @@ const middleware = (next) => (req, res) =>
     urlencodedParser(req, res, () =>
       jsonParser(req, res, () => next(req, res))))
 
+const events = ['finish', 'error']
+const methods = ['setHeader', 'writeHead', 'end']
+const properties = ['url', 'headers', 'httpVersion', 'method', 'body']
+
 module.exports = (internal, publish, emitter) => {
   internal.on('http', middleware((req, res) => {
     const payload = {}
-    const properties = ['url', 'headers', 'httpVersion', 'method', 'body']
     properties.forEach((key) => payload[key] = req[key])
     payload.url = url.parse(payload.url, true)
 
     const socket = emitter('http', payload)
 
-    const events = ['finish', 'error']
     events.forEach((e) => res.on(e, (...args) => {
       try { socket.emit(e, ...args) }
       catch (e) { socket.emit('error', e) }
     }))
 
-    const methods = ['setHeader', 'writeHead', 'end']
     methods.forEach((name) => socket.on(name, (...args) => {
       try { res[name](...args) }
       catch (e) { socket.emit('error', e) }
