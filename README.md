@@ -18,7 +18,7 @@ yarn start
 - [x] Websockets
 - [x] Fetch
 - [x] map domains to apps
-- [ ] Refactor isolate file into stages
+- [x] Refactor isolate file into stages
 - [ ] Simple key value storage - leveldb
 - [ ] Cron subscriptions
 - [ ] Support outgoing websocket connections

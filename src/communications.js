@@ -2,27 +2,24 @@ const ivm = require('isolated-vm')
 const http = require('./http')
 const websocket = require('./websocket')
 
-module.exports = (isolate, context, internal, incoming, outgoing) => {
+module.exports = (params) => {
   let publish = () => {}
   let emitter = () => { return { on: () => {}, emit: () => {} } }
-  incoming.unhandled(internal.emit)
-  internal.unhandled(publish)
-  http(
-    internal,
-    (...args) => publish(...args),
-    (...args) => emitter(...args))
-  websocket(
-    internal,
-    (...args) => publish(...args),
-    (...args) => emitter(...args))
+  params.incoming.unhandled(params.internal.emit)
+  params.internal.unhandled(publish)
+  const childparams = {
+    publish: (...args) => publish(...args),
+    emitter: (...args) => emitter(...args)
+  }
+  Object.assign(childparams, params)
   return Promise.all([
-    context.global.set('_emit', new ivm.Reference(outgoing.emit)),
-    context.global.set('_on', new ivm.Reference((fn) => {
+    params.context.global.set('_emit', new ivm.Reference(params.outgoing.emit)),
+    params.context.global.set('_on', new ivm.Reference((fn) => {
       publish = (...args) => fn.apply(
         undefined,
         args.map(arg => new ivm.ExternalCopy(arg).copyInto()))
     })),
-    context.global.set('_emitter', new ivm.Reference((fn) => {
+    params.context.global.set('_emitter', new ivm.Reference((fn) => {
       emitter = (e, ...args) => {
         const guestListeners = []
         const hostListeners = {}
@@ -55,7 +52,7 @@ module.exports = (isolate, context, internal, incoming, outgoing) => {
       }
     }))
   ])
-  .then(() => isolate.compileScript('new ' + function() {
+  .then(() => params.isolate.compileScript('new ' + function() {
     const ivm = _ivm
     const emit = _emit; delete _emit
     const listeners = {}
@@ -96,5 +93,7 @@ module.exports = (isolate, context, internal, incoming, outgoing) => {
     ])
     delete _emitter
   }))
-  .then((script) => script.run(context))
+  .then((script) => script.run(params.context))
+  .then(() => http(childparams))
+  .then(() => websocket(childparams))
 }

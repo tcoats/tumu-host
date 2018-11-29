@@ -13,13 +13,13 @@ const events = ['finish', 'error']
 const methods = ['setHeader', 'writeHead', 'end']
 const properties = ['url', 'headers', 'httpVersion', 'method', 'body']
 
-module.exports = (internal, publish, emitter) => {
-  internal.on('http', middleware((req, res) => {
+module.exports = (params) => {
+  params.internal.on('http', middleware((req, res) => {
     const payload = {}
     properties.forEach((key) => payload[key] = req[key])
     payload.url = url.parse(payload.url, true)
 
-    const socket = emitter('http', payload)
+    const socket = params.emitter('http', payload)
 
     events.forEach((e) => res.on(e, (...args) => {
       try { socket.emit(e, ...args) }

@@ -1,13 +1,13 @@
 const url = require('url')
 
-module.exports = (internal, publish, emitter) => {
-  internal.on('websocket', (ws, req) => {
+module.exports = (params) => {
+  params.internal.on('websocket', (ws, req) => {
     const payload = {}
     const properties = ['url', 'headers']
     properties.forEach((key) => payload[key] = req[key])
     payload.url = url.parse(payload.url, true)
 
-    const socket = emitter('websocket', payload)
+    const socket = params.emitter('websocket', payload)
 
     const events = ['open', 'message', 'error']
     events.forEach((e) => ws.on(e, (...args) => {

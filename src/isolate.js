@@ -22,18 +22,21 @@ const create = (app) => {
       console.log('starting', app.appId)
       isolate = new ivm.Isolate()
       internal = hub()
-      isolate.createContext().then((context) => Promise.all([
-        context.global.set('global', context.global.derefInto()),
-        context.global.set('_ivm', ivm)
-      ])
-      .then(() => communications(isolate, context, internal, incoming, outgoing))
-      .then(() => fetch(isolate, context, internal, incoming, outgoing))
-      .then(() => isolate.compileScript('new ' + function() {
-        delete _ivm
-      }))
-      .then((script) => script.run(context))
-      .then(() => isolate.compileScript(app.code))
-      .then((hostile) => hostile.run(context)))
+      isolate.createContext().then((context) => {
+        const params = { isolate, context, internal, incoming, outgoing }
+        return Promise.all([
+          context.global.set('global', context.global.derefInto()),
+          context.global.set('_ivm', ivm)
+        ])
+        .then(() => communications(params))
+        .then(() => fetch(params))
+        .then(() => isolate.compileScript('new ' + function() {
+          delete _ivm
+        }))
+        .then((script) => script.run(context))
+        .then(() => isolate.compileScript(app.code))
+        .then((hostile) => hostile.run(context))
+      })
       .catch(err => {
         if (err.stack) return outgoing.emit('error', err.stack)
         outgoing.emit('error', err.toString())

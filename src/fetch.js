@@ -3,8 +3,8 @@ const axios = require('axios')
 
 const axiosResponseProperties = ['data', 'headers', 'statusText', 'status']
 
-module.exports = (isolate, context) =>
-  context.global.set('_fetch', new ivm.Reference((params, resolve, reject) => {
+module.exports = (params) =>
+  params.context.global.set('_fetch', new ivm.Reference((params, resolve, reject) => {
     axios(params).then((res) => {
       const payload = {}
       axiosResponseProperties.forEach((key) => payload[key] = res[key])
@@ -14,7 +14,7 @@ module.exports = (isolate, context) =>
     }).catch((err) =>
       reject.apply(undefined, [new ivm.ExternalCopy(err).copyInto()]))
   }))
-  .then(() => isolate.compileScript('new ' + function() {
+  .then(() => params.isolate.compileScript('new ' + function() {
     const ivm = _ivm
     const fetch = _fetch; delete _fetch
     global.fetch = (params) => new Promise((resolve, reject) =>
@@ -39,4 +39,4 @@ module.exports = (isolate, context) =>
         return global.fetch(params)
       })
   }))
-  .then((script) => script.run(context))
+  .then((script) => script.run(params.context))
