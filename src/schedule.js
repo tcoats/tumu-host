@@ -4,8 +4,10 @@ const ivm = require('isolated-vm')
 module.exports = (params) =>
   params.context.global.set('_schedule', new ivm.Reference((timestamp, fn) => {
     const now = Date.now()
-    if (now > timestamp) fn.apply(undefined, [])
-    else setTimeout(() => fn.apply(undefined, []), timestamp - now)
+    if (now > timestamp) fn.apply(undefined, []).catch(() => {})
+    else setTimeout(
+      () => fn.apply(undefined, []).catch(() => {}),
+      timestamp - now)
   }))
   .then(() => params.isolate.compileScript('new ' + function() {
     const ivm = _ivm

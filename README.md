@@ -20,10 +20,8 @@ yarn start
 - [x] map domains to apps
 - [x] Refactor isolate file into stages
 - [x] Simple key value storage - leveldb
-- [ ] Cron subscriptions
-- [ ] Support outgoing websocket connections
-- [ ] Lifecycle events
-- [ ] Secret management?
+- [x] Cron subscriptions
+- [ ] Support for outgoing websocket connections
 
 # Fixes
 - [ ] Support for websocket open event (currently a race condition)
@@ -38,3 +36,5 @@ yarn start
 - [ ] Penetration testing isolated-vm
 - [ ] Scaling - proxy server, certificates
 - [ ] Scalable storage backend
+- [ ] Lifecycle events
+- [ ] Secret management?
