@@ -1,5 +1,6 @@
 const ivm = require('isolated-vm')
 const hub = require('odo-hub')
+const bridge = require('./bridge')
 const access = require('./access')
 const instances = {}
 
@@ -17,23 +18,59 @@ const create = (app) => {
     start: () => {
       isolate = new ivm.Isolate()
       internal = hub()
-      // let emitEmitter = null
       let publish = () => {}
-      internal.on('req', (req, res) => {
-        publish('req', req.url)
-        res.writeHead(200, { 'Content-Type': 'text/plain' })
-        res.end('okay')
-      })
+      let emitter = () => {
+        return {
+          on: () => {},
+          emit: () => {}
+        }
+      }
       incoming.unhandled(internal.emit)
       internal.unhandled(publish)
+      bridge(
+        internal,
+        (...args) => publish(...args),
+        (...args) => emitter(...args))
       isolate.createContext().then((context) => Promise.all([
         context.global.set('global', context.global.derefInto()),
         context.global.set('_ivm', ivm),
         context.global.set('_emit', new ivm.Reference(outgoing.emit)),
         context.global.set('_on', new ivm.Reference((fn) => {
-          publish = (...args) => fn.applyIgnored(
+          publish = (...args) => fn.apply(
             undefined,
             args.map(arg => new ivm.ExternalCopy(arg).copyInto()))
+        })),
+        context.global.set('_emitter', new ivm.Reference((fn) => {
+          emitter = (e, ...args) => {
+            const guestListeners = []
+            const hostListeners = {}
+            fn.apply(undefined, [
+              new ivm.ExternalCopy(e).copyInto(),
+              new ivm.Reference((subscriber) => {
+                guestListeners.push((...args) => {
+                  subscriber.apply(
+                    undefined,
+                    args.map(arg => new ivm.ExternalCopy(arg).copyInto()))
+                  // TODO: Fix TypeError: A non-transferable value was passed
+                  .catch(() => {})
+                })
+              }),
+              new ivm.Reference((e, ...args) => {
+                if (!hostListeners[e]) return
+                hostListeners[e].forEach((fn) => fn(...args))
+              }),
+              ...args.map(arg => new ivm.ExternalCopy(arg).copyInto())
+            ])
+            // TODO: Fix TypeError: A non-transferable value was passed
+            .catch(() => {})
+            return {
+              on: (e, fn) => {
+                if (!hostListeners[e]) hostListeners[e] = []
+                hostListeners[e].push(fn)
+              },
+              emit: (...args) => guestListeners.forEach((fn) => fn(...args))
+            }
+          }
         }))
       ])
       .then(() => isolate.compileScript('new ' + function() {
@@ -45,13 +82,32 @@ const create = (app) => {
             if (!listeners[e]) listeners[e] = []
             listeners[e].push(fn)
           },
-          emit: (...args) => emit.applyIgnored(undefined,
+          emit: (...args) => emit.apply(undefined,
             args.map(arg => new ivm.ExternalCopy(arg).copyInto()))
         }
-        _on.applyIgnored(undefined, [
+        _on.apply(undefined, [
           new ivm.Reference((e, ...args) =>
             listeners[e].forEach((fn) => fn(...args)))])
         delete _on
+        _emitter.apply(undefined, [
+          new ivm.Reference((e, on, emit, ...args) => {
+            if (!listeners[e]) return
+            const emitListeners = {}
+            on.apply(undefined, [
+              new ivm.Reference((e, ...args) => {
+                emitListeners[e].forEach((fn) => fn(...args))
+              })])
+            listeners[e].forEach((fn) => fn({
+              on: (e, fn) => {
+                if (!emitListeners[e]) emitListeners[e] = []
+                emitListeners[e].push(fn)
+              },
+              emit: (...args) => emit.apply(undefined,
+                args.map(arg => new ivm.ExternalCopy(arg).copyInto()))
+            }, ...args))
+          })
+        ])
+        delete _emitter
       }))
       .then((script) => script.run(context))
       .then(() => isolate.compileScript(app.code))
