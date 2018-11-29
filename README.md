@@ -19,7 +19,7 @@ yarn start
 - [x] Fetch
 - [x] map domains to apps
 - [x] Refactor isolate file into stages
-- [ ] Simple key value storage - leveldb
+- [x] Simple key value storage - leveldb
 - [ ] Cron subscriptions
 - [ ] Support outgoing websocket connections
 - [ ] Lifecycle events

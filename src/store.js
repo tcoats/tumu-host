@@ -3,11 +3,6 @@ const level = require('level')
 
 const databases = {}
 
-// db.batch()
-// db.createReadStream()
-// db.createKeyStream()
-// db.createValueStream()
-
 module.exports = (params) => {
   if (!databases[params.app.appId]) {
     const path = __dirname + `/../.data/${params.app.appId}`

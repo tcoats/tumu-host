@@ -3,6 +3,7 @@ const http = require('./http')
 const websocket = require('./websocket')
 const fetch = require('./fetch')
 const store = require('./store')
+const schedule = require('./schedule')
 
 module.exports = (params) => {
   let publish = () => {}
@@ -103,6 +104,7 @@ module.exports = (params) => {
   .then((script) => script.run(params.context))
   .then(() => http(childparams))
   .then(() => websocket(childparams))
-  .then(() => fetch(params))
-  .then(() => store(params))
+  .then(() => fetch(childparams))
+  .then(() => store(childparams))
+  .then(() => schedule(childparams))
 }
