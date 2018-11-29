@@ -9,9 +9,9 @@ const middleware = (next) => (req, res) =>
     urlencodedParser(req, res, () =>
       jsonParser(req, res, () => next(req, res))))
 
+const properties = ['url', 'headers', 'httpVersion', 'method', 'body']
 const events = ['finish', 'error']
 const methods = ['setHeader', 'writeHead', 'end']
-const properties = ['url', 'headers', 'httpVersion', 'method', 'body']
 
 module.exports = (params) => {
   params.internal.on('http', middleware((req, res) => {

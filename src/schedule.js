@@ -1,6 +1,5 @@
 const ivm = require('isolated-vm')
 
-
 module.exports = (params) =>
   params.context.global.set('_schedule', new ivm.Reference((timestamp, fn) => {
     const now = Date.now()
