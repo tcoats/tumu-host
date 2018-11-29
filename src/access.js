@@ -17,7 +17,8 @@ const result = {
   open: () => Promise.all([
     loadAll('user').then((users) => result.users = users ),
     loadAll('email').then((emails) => result.emails = emails),
-    loadAll('app').then((apps) => result.apps = apps)
+    loadAll('app').then((apps) => result.apps = apps),
+    loadAll('domain').then((domains) => result.domains = domains)
   ]),
   close: () => Promise.resolve(),
   users: {},
@@ -34,6 +35,11 @@ const result = {
   setApp: (id, app) => {
     result.apps[id] = app
     writeOne('app', id, app)
+  },
+  domains: {},
+  setDomain: (domain, app) => {
+    result.domains[domain] = app
+    writeOne('domain', domain, app)
   }
 }
 module.exports = result

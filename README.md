@@ -17,6 +17,8 @@ yarn start
 - [x] Pass requests, responses
 - [x] Websockets
 - [ ] Storage
-- [ ] Fetch
+- [x] Fetch
+- [ ] map domains to apps
 - [ ] CNAME support?
-- [ ] Support for websocket open
+- [ ] Support for websocket open event (currently a race condition)
+- [ ] Support outgoing websocket connections

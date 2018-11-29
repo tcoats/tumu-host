@@ -76,6 +76,15 @@ module.exports = {
       socket.send('new', appId)
     })
   },
+  domain: (socket, params) => {
+    if (!socket.token) return socket.send('error', 'No token supplied')
+    const payload = tokens.verify(socket.token)
+    if (!payload || !payload.userId) return socket.send('error', 'Token invalid')
+    if (!params.app) return socket.send('error', 'App not specified')
+    if (!access.apps[params.app]) return socket.send('error', 'App not found')
+    access.setDomain(params.domain, params.app)
+    socket.send('domain')
+  },
   publish: (socket, params) => {
     if (!socket.token) return socket.send('error', 'No token supplied')
     const payload = tokens.verify(socket.token)
@@ -86,7 +95,6 @@ module.exports = {
     app.code = params.code
     access.setApp(params.app, app)
     isolate.run(app)
-    isolate.emit(app.appId, 'ping')
     socket.send('publish')
   },
   logs: (socket, app) => {

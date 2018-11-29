@@ -31,10 +31,18 @@ const findApp = (req) => {
   // match based on explicit header
   if (req.headers.TUMU_APP && access.apps[req.headers.TUMU_APP])
     app = access.apps[req.headers.TUMU_APP]
-  // match based on subdomain
   if (!app && req.headers.host) {
-    const test = req.headers.host.split(/[:./]+/)[0]
-    if (access.apps[test]) app = access.apps[test]
+    // match based on domain
+    const domain = req.headers.host.split(/[:]+/)[0]
+    if (access.domains[domain]) {
+      const appId = access.domains[domain]
+      if (access.apps[appId]) app = access.apps[appId]
+    }
+    // test subdomain
+    if (!app) {
+      const test = req.headers.host.split(/[:./]+/)[0]
+      if (access.apps[test]) app = access.apps[test]
+    }
   }
   // // match based on first directory of path
   // if (!app) {
