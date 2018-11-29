@@ -6,7 +6,8 @@
     "start": "node ./src/"
   },
   "bin": {
-    "tumu-local": "bin/local.js"
+    "tumu-local": "bin/local.js",
+    "tumu-host": "bin/cli.js"
   },
   "repository": "git@github.com:tcoats/tumu-host.git",
   "author": "Thomas Coats <github@voodoolabs.net>",
