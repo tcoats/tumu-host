@@ -10,6 +10,7 @@ const httpBridge = require('../src/http')
 const websocketBridge = require('../src/websocket')
 const level = require('level-mem')
 store = level()
+websocket = (address) => new WebSocket(address)
 
 const inputHelp = () => console.error(`
   An input file is not specified — please fix by:
