@@ -19,7 +19,7 @@ yarn start
 ```
 
 # Todo
-- [ ] Support for outgoing websocket connections
+- [x] Support for outgoing websocket connections
 - [ ] Queues
 - [ ] Web-based IDE Lambda
 
