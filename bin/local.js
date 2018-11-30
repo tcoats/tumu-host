@@ -6,8 +6,8 @@ const Hub = require('odo-hub')
 const http = require('http')
 const WebSocket = require('ws')
 fetch = require('axios')
-const httpBridge = require('../src/http')
-const websocketBridge = require('../src/websocket')
+const httpserver = require('../src/httpserver')
+const websocketserver = require('../src/websocketserver')
 const level = require('level-mem')
 store = level()
 websocket = (address) => new WebSocket(address)
@@ -76,8 +76,8 @@ const emitter = (e, ...args) => {
   return result
 }
 const childparams = { internal: incoming, emitter }
-httpBridge(childparams)
-websocketBridge(childparams)
+httpserver(childparams)
+websocketserver(childparams)
 const port = process.env.TUMU_PORT || 8080
 const httpServer = http.createServer((req, res) => {
   incoming.emit('http', req, res)
