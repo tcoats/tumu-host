@@ -5,7 +5,7 @@ const databases = {}
 
 module.exports = (params) => {
   if (!databases[params.app.appId]) {
-    const path = `${process.cwd()}/.data/${params.app.appId}`
+    const path = `${process.cwd()}/.tumu-data/${params.app.appId}`
     databases[params.app.appId] = level(path)
   }
   const db = databases[params.app.appId]

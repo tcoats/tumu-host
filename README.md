@@ -19,19 +19,6 @@ yarn start
 ```
 
 # Todo
-- [x] Errors need a good way to be logged
-- [x] Hub available
-- [x] Configuration options - port
-- [x] stdlib inside the isolate
-- [x] Emitter api
-- [x] Pass requests, responses
-- [x] Websockets
-- [x] Fetch
-- [x] map domains to apps
-- [x] Refactor isolate file into stages
-- [x] Simple key value storage - leveldb
-- [x] Cron subscriptions
-- [x] Local mode
 - [ ] Support for outgoing websocket connections
 - [ ] Queues
 - [ ] Web-based IDE Lambda

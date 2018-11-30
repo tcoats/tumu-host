@@ -1,4 +1,6 @@
 require('dotenv').config()
+const fs = require('fs')
+try { fs.mkdirSync(`${process.cwd()}/.tumu-data`) } catch (e) {}
 const http = require('http')
 const WebSocket = require('ws')
 const access = require('./access')

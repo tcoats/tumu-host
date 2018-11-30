@@ -1,4 +1,4 @@
-const db = require('level')(`${process.cwd()}/.data/access`)
+const db = require('level')(`${process.cwd()}/.tumu-data/access`)
 
 const loadAll = (prefix) => new Promise((resolve, reject) => {
   const result = {}
