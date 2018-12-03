@@ -46,7 +46,7 @@ const create = (app) => {
       console.log('stopping', app.appId)
       incoming.unhandledOff(internal.emit)
       internal = null
-      isolate.dispose()
+      if (!isolate.isDisposed) isolate.dispose()
       isolate = null
     },
     update: (app) => {
@@ -79,6 +79,13 @@ module.exports = {
     const app = access.apps[appId]
     app.disabled = true
     access.setApp(appId, app)
+  },
+  delete: (appId) => {
+    if (!instances[appId]) return
+    instances[appId].stop()
+    delete instances[appId]
+    access.delApp(appId)
+    console.log('deleting', appId)
   },
   run: (app) => {
     if (instances[app.appId]) return instances[app.appId].update(app)

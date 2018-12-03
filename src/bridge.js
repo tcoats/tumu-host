@@ -68,8 +68,9 @@ module.exports = (params) => {
         listeners[e].push(fn)
         return global.hub
       },
-      emit: (...args) => emit.apply(undefined,
-        args.map(arg => new ivm.ExternalCopy(arg).copyInto()))
+      emit: (...args) => emit
+        .apply(undefined, args.map(arg => new ivm.ExternalCopy(arg).copyInto()))
+        .catch((err) => console.error(err.toString()))
     }
     global.console = {
       log: (...args) => hub.emit('log', ...args),

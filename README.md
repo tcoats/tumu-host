@@ -21,17 +21,16 @@ yarn start
 # Todo
 - [x] Support for outgoing websocket connections
 - [ ] Queues
-- [ ] Web-based IDE Lambda
 
 # Fixes
 - [ ] Support for websocket open event (currently a race condition)
 - [ ] Track down conversion errors
 - [ ] Detect subcriptions to http and websocket
 - [ ] aaa collision detection
+- [ ] Record log messages and replay based on time
 
 # SaaS
 - [ ] CNAME support
-- [ ] Teams, mempership, invitations, listing apps, membership etc.
 - [ ] Sandboxing fetch better
 - [ ] Penetration testing isolated-vm
 - [ ] Scaling - proxy server, certificates

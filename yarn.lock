@@ -757,6 +757,11 @@ path-case@^1.1.0:
   dependencies:
     sentence-case "^1.1.2"
 
+perm@^0.1.1:
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/perm/-/perm-0.1.1.tgz#44bce07ab1ec92405b996342295486a58467bc46"
+  integrity sha1-RLzgerHskkBbmWNCKVSGpYRnvEY=
+
 prebuild-install@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/prebuild-install/-/prebuild-install-4.0.0.tgz#206ce8106ce5efa4b6cf062fc8a0a7d93c17f3a8"
