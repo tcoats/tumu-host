@@ -10,6 +10,8 @@ module.exports = (socket, workspace) => {
   if (!access.workspaces[workspace])
     return socket.send('error', 'Workspace not found')
   const permKey = `workspace:${workspace}`
+  if (!access.perm.hasparent(permKey, `user:${payload.userId}`))
+    return socket.send('error', 'No access to workspace')
   for (let child of access.perm.children(permKey)) {
     access.permRemove(permKey, child)
     if (child.indexOf('app:') == 0) isolate.delete(child.split(':')[1])

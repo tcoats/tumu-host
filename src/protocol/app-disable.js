@@ -8,6 +8,8 @@ module.exports = (socket, app) => {
   if (!payload || !payload.userId) return socket.send('error', 'Token invalid')
   if (!app) return socket.send('error', 'App not specified')
   if (!access.apps[app]) return socket.send('error', 'App not found')
+  if (!access.perm.hasparent(`app:${app}`, `user:${payload.userId}`))
+    return socket.send('error', 'No access to app')
   isolate.disable(app)
   socket.send('app_disable_complete')
 }

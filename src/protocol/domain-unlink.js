@@ -7,7 +7,8 @@ module.exports = (socket, domain) => {
   if (!payload || !payload.userId) return socket.send('error', 'Token invalid')
   if (!access.domains[domain])
     return socket.send('error', 'Domain not in use')
-  //TODO: perm check
+  if (!access.perm.hasparent(`app:${access.domains[domain]}`, `user:${payload.userId}`))
+    return socket.send('error', 'No access to app')
   access.permRemove(`domain:${domain}`, `app:${access.domains[domain]}`)
   access.delDomain(domain)
   socket.send('domain_unlink_complete')

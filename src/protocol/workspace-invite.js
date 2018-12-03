@@ -12,6 +12,8 @@ module.exports = (socket, params) => {
     return socket.send('error', 'Email address not specified')
   if (!access.emails[params.emailAddress])
     return socket.send('error', 'Email address not found')
+  if (!access.perm.hasparent(`workspace:${params.workspace}`, `user:${payload.userId}`))
+    return socket.send('error', 'No access to workspace')
   access.permAdd(`workspace:${params.workspace}`, `user:${access.emails[params.emailAddress]}`)
   socket.send('workspace_invite_complete')
 }

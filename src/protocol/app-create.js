@@ -10,6 +10,9 @@ module.exports = (socket, params) => {
   if (!params.workspace) return socket.send('error', 'Workspace not specified')
   if (!access.workspaces[params.workspace])
     return socket.send('error', 'Workspace not found')
+  const workspacePermKey = `workspace:${params.workspace}`
+  if (!access.perm.hasparent(workspacePermKey, `user:${payload.userId}`))
+    return socket.send('error', 'No access to workspace')
   aaa().then((appId) => {
     const app = {
       appId: appId,
@@ -17,7 +20,7 @@ module.exports = (socket, params) => {
       code: ''
     }
     access.setApp(appId, app)
-    access.permAdd(`app:${appId}`, `workspace:${params.workspace}`)
+    access.permAdd(`app:${appId}`, workspacePermKey)
     isolate.enable(app)
     socket.send('app_created', appId)
   })

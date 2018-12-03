@@ -8,6 +8,8 @@ module.exports = (socket, params) => {
   if (!params.workspace) return socket.send('error', 'Workspace not specified')
   if (!access.workspaces[params.workspace])
     return socket.send('error', 'Workspace not found')
+  if (!access.perm.hasparent(`workspace:${params.workspace}`, `user:${payload.userId}`))
+    return socket.send('error', 'No access to workspace')
   const workspace = access.workspaces[params.workspace]
   workspace.name = params.name
   access.setWorkspace(params.workspace, workspace)
