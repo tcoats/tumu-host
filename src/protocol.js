@@ -10,6 +10,7 @@ module.exports = {
   app_delete: require('./protocol/app-delete'),
   app_rename: require('./protocol/app-rename'),
   app_stream_logs: require('./protocol/app-stream-logs'),
+  app_code: require('./protocol/app-code'),
 
   status: require('./protocol/status'),
 

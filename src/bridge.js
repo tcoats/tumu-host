@@ -70,11 +70,11 @@ module.exports = (params) => {
       },
       emit: (...args) => emit
         .apply(undefined, args.map(arg => new ivm.ExternalCopy(arg).copyInto()))
-        .catch((err) => console.error(err.toString()))
+        .catch(() => {})
     }
     global.console = {
-      log: (...args) => hub.emit('log', ...args),
-      error: (...args) => hub.emit('error', ...args)
+      log: (...args) => hub.emit('app_log_message', ...args),
+      error: (...args) => hub.emit('app_error_message', ...args)
     }
 
     _bridge_on.apply(undefined, [

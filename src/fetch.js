@@ -12,9 +12,10 @@ module.exports = (params) =>
         resolve
           .apply(undefined, [new ivm.ExternalCopy(payload).copyInto()])
           .catch(() => {})
-      }).catch((err) =>
+      }).catch((err) => {
         reject.apply(undefined, [
-          new ivm.ExternalCopy(err.toString()).copyInto()]))
+          new ivm.ExternalCopy(err.toString()).copyInto()])
+        })
     } catch (err) {
       reject.apply(undefined, [new ivm.ExternalCopy(err).copyInto()])
     }

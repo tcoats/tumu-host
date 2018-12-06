@@ -12,23 +12,27 @@ const apiHttpServer = http.createServer((req, res) => {
   res.writeHead(404, { 'Content-Type': 'text/plain' })
   res.end(`yarn add global tumu\ntumu login --host=${req.headers.host}`)
 })
-const apiWsServer = new WebSocket.Server({ server: apiHttpServer })
-apiWsServer.on('connection', (socket, req) => {
-  const api = {
-    send: (command, params) => socket.send(JSON.stringify([command, params])),
-    close: () => socket.terminate(),
-    isclosed: false
-  }
-  if (req.headers.token) api.token = req.headers.token
-  socket.on('message', (data) => {
-    let payload = null
-    try { payload = JSON.parse(data) }
-    catch (e) { return socket.terminate() }
-    if (!Array.isArray(payload) || payload.length != 2 || !protocol[payload[0]])
-      return socket.terminate()
-    protocol[payload[0]](api, payload[1])
+const apiWsServer = new WebSocket.Server({ noServer: true })
+apiHttpServer.on('upgrade', (req, socket, head) => {
+  apiWsServer.handleUpgrade(req, socket, head, (socket) => {
+    const api = {
+      send: (command, params) => socket.send(JSON.stringify([command, params])),
+      close: () => socket.terminate(),
+      isclosed: false
+    }
+    if (req.headers.token) api.token = req.headers.token
+    if (req.headers['sec-websocket-protocol'])
+      api.token = req.headers['sec-websocket-protocol']
+    socket.on('message', (data) => {
+      let payload = null
+      try { payload = JSON.parse(data) }
+      catch (e) { return socket.terminate() }
+      if (!Array.isArray(payload) || payload.length != 2 || !protocol[payload[0]])
+        return socket.terminate()
+      protocol[payload[0]](api, payload[1])
+    })
+    socket.on('close', () => api.isclosed = true)
   })
-  socket.on('close', () => api.isclosed = true)
 })
 
 const findApp = (req) => {
@@ -74,7 +78,7 @@ const httpServer = http.createServer((req, res) => {
 const wsServer = new WebSocket.Server({ server: httpServer })
 wsServer.on('connection', (ws, req) => {
   const app = findApp(req)
-  if (!app) return ws.destroy()
+  if (!app) return ws.close()
   isolate.emit(app.appId, 'websocket', ws, req)
 })
 

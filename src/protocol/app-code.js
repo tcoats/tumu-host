@@ -10,14 +10,5 @@ module.exports = (socket, app) => {
   if (!access.apps[app]) return socket.send('error', 'App not found')
   if (!access.perm.hasparent(`app:${app}`, `user:${payload.userId}`))
     return socket.send('error', 'No access to app')
-  const log = (...args) => {
-    if (socket.isclosed) return isolate.off(app, 'app_log_message', log)
-    socket.send('app_log_message', args)
-  }
-  isolate.on(app, 'app_log_message', log)
-  const error = (...args) => {
-    if (socket.isclosed) return isolate.off(app, 'app_error_message', error)
-    socket.send('app_error_message', args)
-  }
-  isolate.on(app, 'app_error_message', error)
+  socket.send('app_code_complete', access.apps[app].code)
 }

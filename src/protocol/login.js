@@ -5,7 +5,8 @@ module.exports = (socket, emailAddress) => {
   // auto signup
   // TODO: email validation?
   if (!access.emails[emailAddress]) {
-    socket.secret = speakeasy.generateSecret().base32
+    const secret = speakeasy.generateSecret()
+    socket.secret = secret.base32
     socket.send('login_secret_generated', socket.secret)
     return
   }
