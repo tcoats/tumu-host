@@ -21,7 +21,7 @@ module.exports = (socket, params) => {
     }
     access.setApp(appId, app)
     access.permAdd(`app:${appId}`, workspacePermKey)
-    isolate.enable(app)
+    isolate.enable(appId)
     socket.send('app_created', appId)
   })
 }
