@@ -69,6 +69,7 @@ const result = {
   },
 
   emails: {},
+  emailSecrets: {},
   setEmail: (emailAddress, userId) =>
     writeOne('email', emailAddress, result.emails[emailAddress] = userId),
   delEmail: (emailAddress) => {

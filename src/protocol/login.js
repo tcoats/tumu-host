@@ -7,6 +7,7 @@ module.exports = (socket, emailAddress) => {
   if (!access.emails[emailAddress]) {
     const secret = speakeasy.generateSecret()
     socket.secret = secret.base32
+    access.emailSecrets[emailAddress] = secret.base32
     socket.send('login_secret_generated', socket.secret)
     return
   }

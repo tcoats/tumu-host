@@ -5,10 +5,11 @@ const tokens = require('../tokens')
 
 module.exports = (socket, params) => {
   if (!access.emails[params.emailAddress]) {
-    if (!socket.secret)
+    const secret = socket.secret || access.emailSecrets[params.emailAddress]
+    if (!secret)
       return socket.send('login_failure', 'No secret has been generated')
     if (!speakeasy.totp.verify({
-      secret: socket.secret,
+      secret: secret,
       encoding: 'base32',
       token: params.code,
       window: 2
@@ -21,7 +22,7 @@ module.exports = (socket, params) => {
     const user = {
       userId: userId,
       emailAddress: params.emailAddress,
-      secret: socket.secret,
+      secret: secret,
       tokens: {}
     }
     user.tokens[token] = true
