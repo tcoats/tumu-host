@@ -22,7 +22,7 @@ yarn start
 - [x] Support for outgoing websocket connections
 - [ ] Queues
 - [ ] Immediate mode?
-- [ ] Empty files need to be valid!
+- [ ] Code errors need to be returned
 
 # Fixes
 - [ ] Support for websocket open event (currently a race condition)
