@@ -20,6 +20,7 @@ yarn start
 
 # Todo
 - [x] Support for outgoing websocket connections
+- [ ] Remove someone from a workspace
 - [ ] Queues
 - [ ] Immediate mode?
 - [ ] Code errors need to be returned

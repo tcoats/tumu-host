@@ -21,5 +21,6 @@ module.exports = {
   workspace_rename: require('./protocol/workspace-rename'),
   workspace_delete: require('./protocol/workspace-delete'),
   workspace_invite: require('./protocol/workspace-invite'),
-  workspace_leave: require('./protocol/workspace-leave')
+  workspace_leave: require('./protocol/workspace-leave'),
+  workspace_status: require('./protocol/workspace-status')
 }
