@@ -15,7 +15,7 @@ module.exports = (params) =>
       }).catch((err) => {
         reject.apply(undefined, [
           new ivm.ExternalCopy(err.toString()).copyInto()])
-        })
+      })
     } catch (err) {
       reject.apply(undefined, [new ivm.ExternalCopy(err).copyInto()])
     }

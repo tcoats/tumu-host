@@ -60,7 +60,8 @@ module.exports = (params) => {
   ])
   .then(() => params.isolate.compileScript('new ' + function() {
     const ivm = _ivm
-    const emit = _bridge_emit; delete _bridge_emit
+    const emit = _bridge_emit
+    delete _bridge_emit
     const listeners = {}
     global.hub = {
       on: (e, fn) => {
@@ -72,9 +73,13 @@ module.exports = (params) => {
         .apply(undefined, args.map(arg => new ivm.ExternalCopy(arg).copyInto()))
         .catch(() => {})
     }
+    const prep = obj => {
+      if (typeof(obj) === 'function') return obj.toString()
+      return obj
+    }
     global.console = {
-      log: (...args) => hub.emit('app_log_message', ...args),
-      error: (...args) => hub.emit('app_error_message', ...args)
+      log: (...args) => hub.emit('app_log_message', ...args.map(prep)),
+      error: (...args) => hub.emit('app_error_message', ...args.map(prep))
     }
 
     _bridge_on.apply(undefined, [

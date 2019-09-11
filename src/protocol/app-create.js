@@ -1,4 +1,4 @@
-const aaa = require('adjective-adjective-animal')
+const aaa2 = require('aaa2')
 const access = require('../access')
 const tokens = require('../tokens')
 const isolate = require('../isolate')
@@ -13,15 +13,15 @@ module.exports = (socket, params) => {
   const workspacePermKey = `workspace:${params.workspace}`
   if (!access.perm.hasparent(workspacePermKey, `user:${payload.userId}`))
     return socket.send('error', 'No access to workspace')
-  aaa().then((appId) => {
-    const app = {
-      appId: appId,
-      name: params.name,
-      code: ''
-    }
-    access.setApp(appId, app)
-    access.permAdd(`app:${appId}`, workspacePermKey)
-    isolate.enable(appId)
-    socket.send('app_created', appId)
-  })
+  let appId = aaa2()
+  while (result.apps[appId] == null) appId = aaa2()
+  const app = {
+    appId: appId,
+    name: params.name,
+    code: ''
+  }
+  access.setApp(appId, app)
+  access.permAdd(`app:${appId}`, workspacePermKey)
+  isolate.enable(appId)
+  socket.send('app_created', appId)
 }

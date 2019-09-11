@@ -10,7 +10,7 @@ const isolate = require('./isolate')
 const apiPort = process.env.TUMU_API_PORT || 8081
 const apiHttpServer = http.createServer((req, res) => {
   res.writeHead(404, { 'Content-Type': 'text/plain' })
-  res.end(`yarn add global tumu\ntumu login --host=${req.headers.host}`)
+  res.end(`npm i -g tumu\ntumu login --host=${req.headers.host}`)
 })
 const apiWsServer = new WebSocket.Server({ noServer: true })
 apiHttpServer.on('upgrade', (req, socket, head) => {

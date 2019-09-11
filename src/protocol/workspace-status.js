@@ -18,9 +18,9 @@ module.exports = (socket, workspace) => {
       userIds[parent.split(':')[1]] = true
   socket.send('workspace_status_complete', {
     users: Object.keys(userIds).map((id) => {
-      if (!access.users[id]) {
-        console.log(access.users)
-        console.log(id)
+      if (!access.users[id]) return {
+        userId: id,
+        emailAddress: null
       }
       return {
         userId: id,
