@@ -19,7 +19,7 @@
     "compression": "^1.7.4",
     "dotenv": "^8.1.0",
     "isolated-vm": "^2.0.1",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "level": "^5.0.1",
     "level-mem": "^5.0.1",
     "odo-hub": "^4.0.3",
